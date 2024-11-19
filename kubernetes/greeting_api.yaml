@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: greeting-api
+spec:
+    replicas: 0
+    selector:
+        matchLabels:
+            app: greeting-api
+    template:
+        metadata:
+            labels:
+                app: greeting-api
+        spec:
+            containers:
+                -   name: greeting-api
+                    image: arnecdn/greeting-api:0.1
+                    imagePullPolicy: IfNotPresent
+                    resources:
+                        requests:
+                            memory: "8Mi"
+                            cpu: "1m"
+                        limits:
+                            cpu: "10m"
+                            memory: "16Mi"
+                    ports:
+                        -   containerPort: 8080
+                    env:
+                        - name: APP__DB__DATABASE_URL
+                          value: "postgres://greeting_rust:greeting_rust@postgres-greeting:5432/greeting_rust"
+                        - name: APP__OTEL_COLLECTOR__OLTP_ENDPOINT
+                          value: "http://my-opentelemetry-collector:4317"
+                        - name: APP__KUBE__MY_POD_NAME
+                          valueFrom:
+                            fieldRef:
+                              fieldPath: metadata.name
+
+                    command:
+                              - "/usr/bin/server"
+
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+    name: greeting-api-cpu-scaledobject
+    namespace: default
+spec:
+    scaleTargetRef:
+        name: greeting-api
+    pollingInterval: 10
+    cooldownPeriod: 10                               # Optional. Default: 300 seconds
+    minReplicaCount: 1
+    maxReplicaCount: 10  # Max can go upto num of partitions you have in the topic
+    triggers:
+        - type: cpu
+          metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
+          metadata:
+              value: "50"
