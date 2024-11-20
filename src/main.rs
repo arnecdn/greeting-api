@@ -31,7 +31,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_config = Settings::new();
 
-    let (logger_provider,_) = init_otel(&app_config).await;
+    open_telemetry::init_otel(&app_config).await;
 
     let pool = Box::new(db::init_db(app_config.db.database_url.clone()).await.expect("Expected db pool"));
 
@@ -53,46 +53,6 @@ async fn main() -> std::io::Result<()> {
     join!(log_generator_handle, server_handle);
 
     global::shutdown_tracer_provider();
-    logger_provider.shutdown();
+    // logger_provider.shutdown();
     Ok(())
-}
-
-async fn init_otel(app_config: &Settings) -> (LoggerProvider, opentelemetry_sdk::trace::TracerProvider) {
-    const APP_NAME: &'static str = "greeting_api";
-    let resource = Resource::new(vec![KeyValue::new(
-        opentelemetry_semantic_conventions::resource::SERVICE_NAME,
-        APP_NAME,
-    ), KeyValue::new(
-        opentelemetry_semantic_conventions::resource::K8S_POD_NAME,
-        app_config.kube.my_pod_name.clone(),
-    )]);
-
-    let result = open_telemetry::init_tracer_provider(&app_config.otel_collector.oltp_endpoint, resource.clone());
-    let tracer_provider = result.unwrap();
-    global::set_text_map_propagator(TraceContextPropagator::new());
-
-    // Create a tracing layer with the configured tracer
-    let tracer_layer = tracing_opentelemetry::layer().
-        with_tracer(tracer_provider.tracer(APP_NAME));
-
-    // Initialize logs and save the logger_provider.
-    let logger_provider = open_telemetry::init_logs(&app_config.otel_collector.oltp_endpoint, resource.clone()).unwrap();
-    // Create a new OpenTelemetryTracingBridge using the above LoggerProvider.
-    let logger_layer = OpenTelemetryTracingBridge::new(&logger_provider);
-
-    let filter = EnvFilter::new("info")
-        .add_directive("hyper=info".parse().unwrap())
-        .add_directive("h2=info".parse().unwrap())
-        .add_directive("tonic=info".parse().unwrap())
-        .add_directive("reqwest=info".parse().unwrap());
-
-    tracing_subscriber::registry()
-        .with(logger_layer)
-        .with(filter)
-        .with(tracer_layer)
-        .init();
-    // let meter_provider = init_metrics(&app_config.otel_collector.oltp_endpoint).expect("Failed initializing metrics");
-    // global::set_meter_provider(meter_provider);
-
-    (logger_provider, tracer_provider)
 }

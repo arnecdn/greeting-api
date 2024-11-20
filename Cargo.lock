@@ -982,6 +982,7 @@ dependencies = [
  "derive_more",
  "dotenv",
  "futures-util",
+ "greeting_otel",
  "log",
  "metrics",
  "once_cell",
@@ -1001,6 +1002,26 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "utoipa-swagger-ui",
+]
+
+[[package]]
+name = "greeting_otel"
+version = "0.1.0"
+source = "git+https://github.com/arnecdn/greeting_otel_lib#4832af05415b9bea5d42625da448080652395eb7"
+dependencies = [
+ "metrics",
+ "once_cell",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry-semantic-conventions",
+ "opentelemetry_sdk",
+ "tokio",
+ "tokio-macros 0.2.6",
+ "tracing",
+ "tracing-core",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
 ]
 
 [[package]]

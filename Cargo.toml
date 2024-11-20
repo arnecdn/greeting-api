@@ -37,3 +37,4 @@ utoipa = { version = "4", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
 chrono = { version = "0.4", features = ["serde"] }
 
+greeting_otel={git = "https://github.com/arnecdn/greeting_otel_lib"}
