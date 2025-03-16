@@ -1006,8 +1006,8 @@ dependencies = [
 
 [[package]]
 name = "greeting_otel"
-version = "0.1.0"
-source = "git+https://github.com/arnecdn/greeting_otel_lib#4832af05415b9bea5d42625da448080652395eb7"
+version = "0.1.1"
+source = "git+https://github.com/arnecdn/greeting_otel_lib#0cc33d98736a29b79e364b811ee73596159b6944"
 dependencies = [
  "metrics",
  "once_cell",

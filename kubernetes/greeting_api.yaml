@@ -19,9 +19,9 @@ spec:
                     resources:
                         requests:
                             memory: "8Mi"
-                            cpu: "1m"
+                            cpu: "200m"
                         limits:
-                            cpu: "10m"
+                            cpu: "500m"
                             memory: "16Mi"
                     ports:
                         -   containerPort: 8080
@@ -56,4 +56,4 @@ spec:
         - type: cpu
           metricType: Utilization # Allowed types are 'Utilization' or 'AverageValue'
           metadata:
-              value: "50"
+              value: "500"

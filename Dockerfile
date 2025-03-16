@@ -34,7 +34,7 @@ ENV SQLX_OFFLINE true
 # output directory before the cache mounted /app/target is unmounted.
 RUN --mount=type=bind,source=src,target=src \
     --mount=type=bind,source=.env,target=.env \
-    --mount=type=bind,source=../greeting_otel,target=../greeting_otel \
+#    --mount=type=bind,source=../greeting_otel,target=../greeting_otel \
     --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
     --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
     --mount=type=cache,target=/app/target/ \

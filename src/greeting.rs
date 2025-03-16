@@ -5,7 +5,7 @@ use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use derive_more::{Display};
-use log::error;
+use log::{error, info};
 use sqlx::{Executor, Pool};
 use crate::db::RepoError;
 use crate::greeting::ApiError::ApplicationError;
@@ -21,7 +21,9 @@ use crate::greeting::ApiError::ApplicationError;
 #[get("/logs")]
 pub async fn list_log_entries(data: Data<Pool<sqlx::Postgres>>) -> Result<HttpResponse, ApiError> {
     let r = data.execute("\
-        SELECT id, greeting_id FROM LOGG
+        SELECT id, greeting_id
+        FROM LOGG
+        ORDER BY id
     ").await?;
 
     Ok(HttpResponse::Ok().json(""))
@@ -71,7 +73,7 @@ pub async fn generate_logg(pool: Box<Pool<sqlx::Postgres>>) {
                         $$;")
 
                     .execute(&mut *transaction).await.expect("Failed executing statement");
-
+                info!("Generating log");
                 transaction.commit().await.expect("");
             }
         }
