@@ -1,4 +1,3 @@
-use sqlx::migrate::MigrateError;
 use sqlx::Pool;
 use sqlx::postgres::PgPoolOptions;
 

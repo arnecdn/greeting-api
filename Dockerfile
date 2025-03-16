@@ -6,7 +6,7 @@
 
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
-ARG RUST_VERSION=1.82-bullseye
+ARG RUST_VERSION=1.85-bullseye
 #ARG RUST_VERSION=latest
 ARG APP_NAME=greeting_api
 
@@ -21,7 +21,7 @@ WORKDIR /app
 # Install host build dependencies.
 #RUN apk add --no-cache clang lld musl-dev git cmake g++ make
 RUN apt-get update && apt-get install -y cmake
-ENV SQLX_OFFLINE true
+#ENV SQLX_OFFLINE true
 
 
 # Build the application.
@@ -32,16 +32,16 @@ ENV SQLX_OFFLINE true
 # Leverage a bind mount to the src directory to avoid having to copy the
 # source code into the container. Once built, copy the executable to an
 # output directory before the cache mounted /app/target is unmounted.
-RUN --mount=type=bind,source=src,target=src \
-    --mount=type=bind,source=.env,target=.env \
-#    --mount=type=bind,source=../greeting_otel,target=../greeting_otel \
-    --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
-    --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
-    --mount=type=cache,target=/app/target/ \
-    --mount=type=cache,target=/usr/local/cargo/git/db \
-    --mount=type=cache,target=/usr/local/cargo/registry/ \
-    cargo build --locked --release && \
-    cp ./target/release/$APP_NAME /usr/bin/server
+#RUN --mount=type=bind,source=src,target=src \
+#    --mount=type=bind,source=.env,target=.env \
+#    --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
+#    --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
+#    --mount=type=cache,target=target/ \
+#    --mount=type=cache,target=/usr/local/cargo/git/db \
+#    --mount=type=cache,target=/usr/local/cargo/registry/ \
+COPY . .
+RUN cargo build --locked --release
+RUN cp ./target/release/$APP_NAME /usr/bin/server
 
 
 ################################################################################
@@ -54,8 +54,8 @@ RUN --mount=type=bind,source=src,target=src \
 # By specifying the "3.18" tag, it will use version 3.18 of alpine. If
 # reproducability is important, consider using a digest
 # (e.g., alpine@sha256:664888ac9cfd28068e062c991ebcff4b4c7307dc8dd4df9e728bedde5c449d91).
-FROM rust:${RUST_VERSION} AS final
-RUN apt-get update && apt-get install -y cmake strace
+FROM rust:1.85-slim-bullseye AS final
+#RUN apt-get update && apt-get install -y cmake strace
 
 
 # Create a non-privileged user that the app will run under.

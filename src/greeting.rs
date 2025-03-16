@@ -1,4 +1,3 @@
-use std::sync::RwLock;
 use std::time::Duration;
 use actix_web::{get, HttpResponse, ResponseError};
 use actix_web::http::header::ContentType;
@@ -7,7 +6,6 @@ use actix_web::web::Data;
 use derive_more::{Display};
 use log::{error, info};
 use sqlx::{Executor, Pool};
-use crate::db::RepoError;
 use crate::greeting::ApiError::ApplicationError;
 
 #[utoipa::path(
@@ -41,7 +39,6 @@ impl ResponseError for ApiError {
         match *self {
             // BadClientData(_) => StatusCode::BAD_REQUEST,
             ApplicationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            _ => StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 

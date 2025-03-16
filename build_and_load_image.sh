@@ -18,7 +18,7 @@ fi
 
 # Build the Docker image
 echo "Building Docker image..."
-docker build -q -t "arnecdn/greeting-api:${TAG}" . || {
+podman build -q -t "docker.io/arnecdn/greeting-api:${TAG}" . || {
   echo "Error: Docker build failed."
   exit 1
 }
@@ -26,7 +26,7 @@ docker build -q -t "arnecdn/greeting-api:${TAG}" . || {
 # Create .docker directory and save the image
 mkdir -p .docker
 echo "Saving Docker image to .docker/greeting-api.tar..."
-docker image save -o .docker/greeting-api.tar "arnecdn/greeting-api:${TAG}" || {
+podman save -o .docker/greeting-api.tar "docker.io/arnecdn/greeting-api:${TAG}" || {
   echo "Error: Failed to save Docker image."
   exit 1
 }

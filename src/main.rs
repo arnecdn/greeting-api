@@ -1,9 +1,6 @@
 use actix_web::{web, App, HttpServer};
 use futures_util::join;
-use opentelemetry::{global, KeyValue};
-use opentelemetry::trace::TracerProvider;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
+use opentelemetry::{global};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use crate::settings::Settings;
