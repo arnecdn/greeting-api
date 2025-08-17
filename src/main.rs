@@ -1,13 +1,12 @@
+use crate::settings::Settings;
 use actix_web::{web, App, HttpServer};
 use futures_util::join;
-use opentelemetry::{global};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use crate::settings::Settings;
 
-mod settings;
 mod db;
 mod greeting;
+mod settings;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -22,9 +21,12 @@ async fn main() -> std::io::Result<()> {
 
     let app_config = Settings::new();
 
-
     // greeting_otel::init_otel(&app_config.otel_collector.oltp_endpoint,"greeting_api", &app_config.kube.my_pod_name).await;
-    let pool = web::Data::new(Box::new(db::init_db(app_config.db.database_url.clone()).await.expect("Expected db pool")));
+    let pool = web::Data::new(Box::new(
+        db::init_db(app_config.db.database_url.clone())
+            .await
+            .expect("Expected db pool"),
+    ));
 
     let log_generator_handle = greeting::generate_logg(pool.clone());
 
@@ -36,10 +38,9 @@ async fn main() -> std::io::Result<()> {
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-docs/openapi.json", ApiDoc::openapi()),
             )
-
     })
-        .bind(("127.0.0.1", 8081))?
-        .run();
+    .bind(("127.0.0.1", 8081))?
+    .run();
 
     let r = join!(log_generator_handle, server_handle);
 
