@@ -14,8 +14,8 @@ spec:
         spec:
             containers:
                 -   name: greeting-api
-                    image: arnecdn/greeting_api:0.1
-                    imagePullPolicy: IfNotPresent
+                    image: arnecdn/greeting_api:0.2
+                    imagePullPolicy: Never
                     resources:
                         requests:
                             memory: "8Mi"

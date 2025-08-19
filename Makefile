@@ -1,13 +1,11 @@
-TAG ?= 0.1
+TAG ?= 0.2
 APP_NAME = greeting_api
-IMAGE_NAME = docker.io/arnecdn/$(APP_NAME)
-DOCKER_DIR = .docker
-DOCKER_FILE = $(DOCKER_DIR)/$(APP_NAME).tar
+IMAGE_NAME = arnecdn/$(APP_NAME)
 KUBERNETES_FILE = kubernetes/$(APP_NAME).yaml
 
-.PHONY: build_app all build_image save_image load_image deploy clean
+.PHONY: build_app all build_image deploy clean validate-tag
 
-all: build_image save_image load_image deploy
+all: build_image deploy
 
 build_app:
 	@echo "Building the application..."
@@ -23,28 +21,13 @@ validate-tag:
 	fi
 
 build_image: validate-tag
-	@echo "Building Docker image..."
-	podman build -t "$(IMAGE_NAME):$(TAG)" . || { \
+	@echo "Building Docker image directly in Minikube..."
+	minikube image build -t "$(IMAGE_NAME):$(TAG)" . || { \
 		echo "Error: Docker build failed."; \
 		exit 1; \
 	}
 
-save_image: build_image
-	@echo "Saving Docker image to $(DOCKER_FILE)..."
-	mkdir -p $(DOCKER_DIR)
-	podman save -o $(DOCKER_FILE) "$(IMAGE_NAME):$(TAG)" || { \
-		echo "Error: Failed to save Docker image."; \
-		exit 1; \
-	}
-
-load_image: save_image
-	@echo "Loading image into Minikube..."
-	minikube image load $(DOCKER_FILE) || { \
-		echo "Error: Failed to load image into Minikube."; \
-		exit 1; \
-	}
-
-deploy: load_image
+deploy: build_image
 	@echo "Applying Kubernetes deployment..."
 	kubectl apply -f $(KUBERNETES_FILE) --record || { \
 		echo "Error: Failed to apply Kubernetes deployment."; \
@@ -53,4 +36,5 @@ deploy: load_image
 
 clean:
 	@echo "Cleaning up..."
-	rm -rf $(DOCKER_DIR)
+	@echo "Removing image from Minikube..."
+	minikube image rm "$(IMAGE_NAME):$(TAG)" 2>/dev/null || true
