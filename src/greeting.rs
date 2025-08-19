@@ -5,14 +5,17 @@ use actix_web::web::Data;
 use actix_web::{get, web, HttpResponse, ResponseError};
 use chrono::{DateTime, Utc};
 use derive_more::Display;
-use log::{error, info};
+use greeting_db_api::greeting_query::{
+    GreetingQueryRepository, GreetingQueryRepositoryImpl, LoggQueryEntity,
+};
+use greeting_db_api::DbError;
+use log::error;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use sqlx::query::Query;
-use sqlx::{query, Execute, Executor, PgPool, Pool, Postgres, QueryBuilder, Row};
+use std::any::Any;
 use std::time::Duration;
-use tracing_subscriber::fmt::format;
+use sqlx::{Pool, Postgres};
 use utoipa::ToSchema;
 use validator_derive::Validate;
 
@@ -50,59 +53,41 @@ static DIRECTION: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(asc|desc)$").unwrap(
 )]
 #[get("/logs")]
 pub async fn list_log_entries(
-    data: Data<Box<Pool<Postgres>>>,
+    data: Data<Box<GreetingQueryRepositoryImpl>>,
     logg_query: web::Query<LoggQuery>,
 ) -> Result<HttpResponse, ApiError> {
-    let direction = SqlDirection::value_of(&logg_query.direction);
+    let query = LoggQueryEntity {
+        offset: logg_query.offset,
+        limit: logg_query.limit,
+        direction: logg_query.direction.clone(),
+    };
 
-    let mut logg_sql: QueryBuilder<Postgres> =
-        QueryBuilder::new("SELECT id, greeting_id, opprettet FROM LOGG");
+    let result = data.list_log_entries(query).await?;
 
-    logg_sql.push(format!(" WHERE id {} ", direction.operator));
-    logg_sql.push_bind(logg_query.offset );
-    logg_sql.push(format!(" ORDER BY id {}", direction.order));
-    logg_sql.push(" LIMIT ");
-    logg_sql.push_bind(logg_query.limit);
+    let logg_list = result
+        .iter()
+        .map(|e| LoggEntry {
+            id: e.id,
+            greeting_id: e.greeting_id,
+            created: e.created,
+        })
+        .collect::<Vec<_>>();
 
-    let r = data
-        .fetch_all(logg_sql.build())
-        .await
-        .map(|res| res.iter().map(|v| 
-            LoggEntry { id: v.get(0) , greeting_id: v.get(1), created: v.get(2) }).collect::<Vec<_>>()
-        )
-        .map_err(|e| -> ApiError {
-            error!("{}", e);
-            ApplicationError(e)
-        })?;
-    
-
-    Ok(HttpResponse::Ok().json(r))
+    Ok(HttpResponse::Ok().json(logg_list))
 }
 
-struct SqlDirection {
-    order: String,
-    operator: String,
-}
-
-impl SqlDirection {
-    fn value_of(direction: &str) -> SqlDirection {
-        match direction {
-            "forward" => SqlDirection {
-                order: String::from("ASC"),
-                operator: String::from(">="),
-            },
-            "backward" => SqlDirection {
-                order: String::from("DESC"),
-                operator: String::from("<="),
-            },
-            _ => panic!("Invalid direction"),
+pub async fn generate_logg(pool: Box<Pool<Postgres>>)->Result<(), ApiError> {
+    loop {
+        tokio::time::sleep(Duration::from_secs(5)).await;
+        if let Err(e) = greeting_db_api::generate_logg(&pool).await {
+            error!("Failed to generate logg: {:?}", e);
         }
     }
 }
 
 #[derive(Debug, Display)]
 pub enum ApiError {
-    ApplicationError(sqlx::Error),
+    ApplicationError(DbError),
 }
 
 impl ResponseError for ApiError {
@@ -120,33 +105,8 @@ impl ResponseError for ApiError {
     }
 }
 
-impl From<sqlx::Error> for ApiError {
-    fn from(value: sqlx::Error) -> Self {
+impl From<DbError> for ApiError {
+    fn from(value: DbError) -> Self {
         ApplicationError(value)
-    }
-}
-
-pub async fn generate_logg(pool: Data<Box<Pool<sqlx::Postgres>>>) {
-    loop {
-        tokio::time::sleep(Duration::from_secs(5)).await;
-
-        match pool.begin().await {
-            Err(e) => error!("{}", e),
-            Ok(mut transaction) => {
-                sqlx::query(
-                    "do
-                        $$
-                            begin
-                                perform public.generate_logg();
-                            end
-                        $$;",
-                )
-                    .execute(&mut *transaction)
-                    .await
-                    .expect("Failed executing statement");
-                info!("Generating log");
-                transaction.commit().await.expect("");
-            }
-        }
     }
 }
