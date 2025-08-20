@@ -75,8 +75,6 @@ USER appuser
 
 COPY --chown=appuser:appuser --from=build /usr/bin/server /usr/bin
 
-
-
 #RUN chmod -R 755 /bin/server
 # Expose the port that the application listens on.
 EXPOSE 8080

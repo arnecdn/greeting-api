@@ -29,7 +29,7 @@ build_image: validate-tag
 
 deploy: build_image
 	@echo "Applying Kubernetes deployment..."
-	kubectl apply -f $(KUBERNETES_FILE) --record || { \
+	kubectl apply -f $(KUBERNETES_FILE) || { \
 		echo "Error: Failed to apply Kubernetes deployment."; \
 		exit 1; \
 	}

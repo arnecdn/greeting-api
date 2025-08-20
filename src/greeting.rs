@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use crate::greeting::ApiError::ApplicationError;
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
@@ -19,7 +20,7 @@ use tracing::instrument;
 use utoipa::ToSchema;
 use validator_derive::Validate;
 
-#[derive(Validate, Serialize, Deserialize, Clone, ToSchema, Debug, Display)]
+#[derive(Validate, Serialize, Deserialize, Clone, ToSchema, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct LoggQuery {
     #[validate(range(min = 1))]
@@ -28,6 +29,17 @@ pub struct LoggQuery {
     limit: i64,
     #[validate(regex(path = *DIRECTION, message = "Invalid direction"))]
     direction: String,
+}
+
+impl Display for LoggQuery{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "LoggQuery {{ offset: {}, limit: {}, direction: {} }}",
+            self.offset, self.limit, self.direction
+        )
+
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug)]

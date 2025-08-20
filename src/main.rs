@@ -2,7 +2,7 @@ use crate::settings::Settings;
 use actix_web::{web, App, HttpServer};
 use futures_util::join;
 use greeting_db_api::greeting_query::GreetingQueryRepositoryImpl;
-use log::error;
+use log::{error, info};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -42,6 +42,7 @@ async fn main() -> std::io::Result<()> {
             .expect("Failed creating pool"),
     );
     let querier_data = web::Data::new(query_repo);
+    info!("Starting server");
 
     let server_handle = HttpServer::new(move || {
         App::new()
