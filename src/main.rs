@@ -22,7 +22,8 @@ async fn main() -> std::io::Result<()> {
 
     let app_config = Settings::new();
 
-    // greeting_otel::init_otel(&app_config.otel_collector.oltp_endpoint,"greeting_api", &app_config.kube.my_pod_name).await;
+    greeting_otel::init_otel(&app_config.otel_collector.oltp_endpoint,"greeting_api", &app_config.kube.my_pod_name).await;
+
     let pool = Box::new(
         greeting_db_api::init_db(app_config.db.database_url.clone())
             .await

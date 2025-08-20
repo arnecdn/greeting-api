@@ -9,17 +9,17 @@ use greeting_db_api::greeting_query::{
     GreetingQueryRepository, GreetingQueryRepositoryImpl, LoggQueryEntity,
 };
 use greeting_db_api::DbError;
-use log::error;
+use log::{error, info};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::any::Any;
 use std::time::Duration;
 use sqlx::{Pool, Postgres};
+use tracing::instrument;
 use utoipa::ToSchema;
 use validator_derive::Validate;
 
-#[derive(Validate, Serialize, Deserialize, Clone, ToSchema, Debug)]
+#[derive(Validate, Serialize, Deserialize, Clone, ToSchema, Debug, Display)]
 #[serde(rename_all = "camelCase")]
 pub struct LoggQuery {
     #[validate(range(min = 1))]
@@ -42,7 +42,7 @@ pub struct LoggEntry {
 static DIRECTION: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(asc|desc)$").unwrap());
 #[utoipa::path(
     get,
-    path = "/logs",
+    path = "/log",
     params(
         ("logg_query" = LoggQuery, Query,)
     ),
@@ -51,11 +51,14 @@ static DIRECTION: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(asc|desc)$").unwrap(
         (status = NOT_FOUND, description = "Greetings was not found")
     )
 )]
-#[get("/logs")]
+#[get("/log")]
+#[instrument(name = "log")]
 pub async fn list_log_entries(
     data: Data<Box<GreetingQueryRepositoryImpl>>,
     logg_query: web::Query<LoggQuery>,
 ) -> Result<HttpResponse, ApiError> {
+    info!("Access logg {}", &logg_query);
+
     let query = LoggQueryEntity {
         offset: logg_query.offset,
         limit: logg_query.limit,
@@ -79,6 +82,7 @@ pub async fn list_log_entries(
 pub async fn generate_logg(pool: Box<Pool<Postgres>>)->Result<(), ApiError> {
     loop {
         tokio::time::sleep(Duration::from_secs(5)).await;
+        info!("Generating logs");
         if let Err(e) = greeting_db_api::generate_logg(&pool).await {
             error!("Failed to generate logg: {:?}", e);
         }
