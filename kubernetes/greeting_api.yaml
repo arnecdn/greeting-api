@@ -29,7 +29,7 @@ spec:
                         - name: APP__DB__DATABASE_URL
                           value: "postgres://greeting_rust:Z3JlZXRpbmdfcnVzdAo=@postgres-greeting:5432/greeting_rust"
                         - name: APP__OTEL_COLLECTOR__OLTP_ENDPOINT
-                          value: "http://my-opentelemetry-collector:4317"
+                          value: "http://grafana-alloy:4317"
                         - name: APP__KUBE__MY_POD_NAME
                           valueFrom:
                             fieldRef:
