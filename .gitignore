@@ -1,3 +1,4 @@
 /target
 .idea
 .docker
+.DS_Store
