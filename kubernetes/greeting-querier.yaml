@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: greeting-api
+    name: greeting-querier
 spec:
     replicas: 0
     selector:
         matchLabels:
-            app: greeting-api
+            app: greeting-querier
     template:
         metadata:
             labels:
-                app: greeting-api
+                app: greeting-querier
         spec:
             containers:
-                -   name: greeting-api
-                    image: arnecdn/greeting_api:0.2
+                -   name: greeting-querier
+                    image: arnecdn/greeting-querier:0.2
                     imagePullPolicy: Never
                     resources:
                         requests:
@@ -43,11 +43,11 @@ spec:
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-    name: greeting-api-cpu-scaledobject
+    name: greeting-querier-cpu-scaledobject
     namespace: default
 spec:
     scaleTargetRef:
-        name: greeting-api
+        name: greeting-querier
     pollingInterval: 10
     cooldownPeriod: 10                               # Optional. Default: 300 seconds
     minReplicaCount: 1
