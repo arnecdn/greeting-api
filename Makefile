@@ -1,5 +1,5 @@
-TAG ?= 0.2
-APP_NAME = greeting-querier
+TAG ?= 0.3
+APP_NAME = greeting-api
 IMAGE_NAME = arnecdn/$(APP_NAME)
 KUBERNETES_FILE = kubernetes/$(APP_NAME).yaml
 
@@ -22,7 +22,7 @@ validate-tag:
 
 build_image: validate-tag
 	@echo "Building Docker image directly in Minikube..."
-	minikube image build -t "$(IMAGE_NAME):$(TAG)" . || { \
+	minikube image build -t "$(IMAGE_NAME):$(TAG)" -f Dockerfile . || { \
 		echo "Error: Docker build failed."; \
 		exit 1; \
 	}
