@@ -22,7 +22,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_config = Settings::new();
 
-    greeting_otel::init_otel(&app_config.otel_collector.oltp_endpoint,"greeting_api", &app_config.kube.my_pod_name).await;
+    let providers = greeting_otel::init_otel(&app_config.otel_collector.oltp_endpoint,"greeting_api", &app_config.kube.my_pod_name).await;
 
     let pool = Box::new(
         greeting_db_api::init_db(app_config.db.database_url.clone())
@@ -64,7 +64,10 @@ async fn main() -> std::io::Result<()> {
     if let Err(e) = server_result {
         error!("Server failed: {:?}", e);
     }
-    // global::shutdown_tracer_provider();
-    // logger_provider.shutdown();
+    
+    if let Err(e) = providers.shutdown().await{
+        error!("Failed to shut down: {:?}", e);
+    }
+        
     Ok(())
 }
