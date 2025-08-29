@@ -32,6 +32,6 @@ tracing-subscriber= {version= "0.3",features = ["env-filter","registry", "std"]}
 tracing = { version = "0.1.41", features = ["std"]}
 
 #common database API
-greeting_db_api = { version = "0.2.0", git = "https://github.com/arnecdn/greeting_db_api"}
+greeting_db_api = { version = "0.2.1", git = "https://github.com/arnecdn/greeting_db_api"}
 #greeting_db_api = { version = "0.2.0", path = "../greeting_db_api" }
 

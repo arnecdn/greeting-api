@@ -777,16 +777,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "error"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6e606f14042bb87cc02ef6a14db6c90ab92ed6f62d87e69377bc759fd7987cc"
-dependencies = [
- "traitobject",
- "typeable",
-]
-
-[[package]]
 name = "etcetera"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1003,16 +993,14 @@ dependencies = [
 
 [[package]]
 name = "greeting_db_api"
-version = "0.2.0"
-source = "git+https://github.com/arnecdn/greeting_db_api#542cbcfe568537c6f9b4c3fe6bcc364e1f926a86"
+version = "0.2.1"
+source = "git+https://github.com/arnecdn/greeting_db_api#8e1bc9efbacd5d2842c7d0a076e2dbf2344a6693"
 dependencies = [
  "async-trait",
  "chrono",
  "derive_more 2.0.1",
- "error",
  "log",
  "serde",
- "serde_json",
  "sqlx",
  "uuid",
 ]
@@ -3398,22 +3386,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "traitobject"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04a79e25382e2e852e8da874249358d382ebaf259d0d34e75d8db16a7efabbc7"
-
-[[package]]
 name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e421abadd41a4225275504ea4d6566923418b7f05506fbc9c0fe86ba7396114b"
-
-[[package]]
-name = "typeable"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1410f6f91f21d1612654e7cc69193b0334f909dcf2c790c4826254fbb86f8887"
 
 [[package]]
 name = "typenum"
