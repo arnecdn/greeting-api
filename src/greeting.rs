@@ -91,6 +91,7 @@ pub async fn list_log_entries(
     Ok(HttpResponse::Ok().json(logg_list))
 }
 
+#[instrument(name = "generate_logg")]
 pub async fn generate_logg(pool: Box<Pool<Postgres>>)->Result<(), ApiError> {
     loop {
         tokio::time::sleep(Duration::from_secs(5)).await;
