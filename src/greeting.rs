@@ -15,8 +15,11 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+use greeting_db_api::greeting_pg_trace::PgTraceContext;
+use opentelemetry::trace::TraceContextExt;
 use sqlx::{Pool, Postgres};
-use tracing::instrument;
+use tracing::{instrument, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 use utoipa::ToSchema;
 use validator_derive::Validate;
 
@@ -69,6 +72,8 @@ pub async fn list_log_entries(
     data: Data<Box<GreetingQueryRepositoryImpl>>,
     logg_query: web::Query<LoggQuery>,
 ) -> Result<HttpResponse, ApiError> {
+    let pg_trace = generatePgTraceContext();
+
     info!("Access logg {}", &logg_query);
 
     let query = LoggQueryEntity {
@@ -77,7 +82,7 @@ pub async fn list_log_entries(
         direction: logg_query.direction.clone(),
     };
 
-    let result = data.list_log_entries(query).await?;
+    let result = data.list_log_entries(pg_trace, query).await?;
 
     let logg_list = result
         .iter()
@@ -91,12 +96,25 @@ pub async fn list_log_entries(
     Ok(HttpResponse::Ok().json(logg_list))
 }
 
+fn generatePgTraceContext() -> PgTraceContext {
+    let parent_context = Span::current().context();
+    let trace_id = format!("{}", parent_context.span().span_context().trace_id());
+
+    let span = Span::current();
+    span.set_parent(parent_context);
+    let span_id = format!("{:?}", span.context().span().span_context().span_id());
+    let pg_trace = greeting_db_api::greeting_pg_trace::PgTraceContext { trace_id: trace_id, parent_span_id: span_id };
+    pg_trace
+}
+
 #[instrument(name = "generate_logg")]
 pub async fn generate_logg(pool: Box<Pool<Postgres>>)->Result<(), ApiError> {
     loop {
+        let pg_trace = generatePgTraceContext();
+
         tokio::time::sleep(Duration::from_secs(5)).await;
         info!("Generating logs");
-        if let Err(e) = greeting_db_api::generate_logg(&pool).await {
+        if let Err(e) = greeting_db_api::generate_logg(&pool, pg_trace).await {
             error!("Failed to generate logg: {:?}", e);
         }
     }

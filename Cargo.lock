@@ -979,11 +979,13 @@ dependencies = [
  "greeting_otel",
  "log",
  "once_cell",
+ "opentelemetry",
  "regex",
  "serde",
  "sqlx",
  "tokio",
  "tracing",
+ "tracing-opentelemetry",
  "tracing-subscriber",
  "utoipa",
  "utoipa-swagger-ui",
@@ -993,8 +995,8 @@ dependencies = [
 
 [[package]]
 name = "greeting_db_api"
-version = "0.2.1"
-source = "git+https://github.com/arnecdn/greeting_db_api#8e1bc9efbacd5d2842c7d0a076e2dbf2344a6693"
+version = "0.2.2"
+source = "git+https://github.com/arnecdn/greeting_db_api#17cbf652dc31b66b4f16b106354f93cf0d869f5d"
 dependencies = [
  "async-trait",
  "chrono",
