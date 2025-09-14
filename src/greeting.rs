@@ -1,4 +1,3 @@
-use std::fmt::{Display, Formatter};
 use crate::greeting::ApiError::ApplicationError;
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
@@ -6,18 +5,21 @@ use actix_web::web::Data;
 use actix_web::{get, web, HttpResponse, ResponseError};
 use chrono::{DateTime, Utc};
 use derive_more::Display;
+use greeting_db_api::greeting_pg_trace::PgTraceContext;
 use greeting_db_api::greeting_query::{
     GreetingQueryRepository, GreetingQueryRepositoryImpl, LoggQueryEntity,
 };
 use greeting_db_api::DbError;
 use log::{error, info};
 use once_cell::sync::Lazy;
+use opentelemetry::trace::TraceContextExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
-use greeting_db_api::greeting_pg_trace::PgTraceContext;
-use opentelemetry::trace::TraceContextExt;
 use sqlx::{Pool, Postgres};
+use std::fmt::{Display, Formatter};
+use std::time::Duration;
+use time::sleep;
+use tokio::time;
 use tracing::{instrument, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use utoipa::ToSchema;
@@ -34,14 +36,13 @@ pub struct LoggQuery {
     direction: String,
 }
 
-impl Display for LoggQuery{
+impl Display for LoggQuery {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "LoggQuery {{ offset: {}, limit: {}, direction: {} }}",
             self.offset, self.limit, self.direction
         )
-
     }
 }
 
@@ -72,7 +73,7 @@ pub async fn list_log_entries(
     data: Data<Box<GreetingQueryRepositoryImpl>>,
     logg_query: web::Query<LoggQuery>,
 ) -> Result<HttpResponse, ApiError> {
-    let pg_trace = generatePgTraceContext();
+    let pg_trace = generate_pg_trace_context();
 
     info!("Access logg {}", &logg_query);
 
@@ -96,28 +97,33 @@ pub async fn list_log_entries(
     Ok(HttpResponse::Ok().json(logg_list))
 }
 
-fn generatePgTraceContext() -> PgTraceContext {
-    let parent_context = Span::current().context();
-    let trace_id = format!("{}", parent_context.span().span_context().trace_id());
-
-    let span = Span::current();
-    span.set_parent(parent_context);
-    let span_id = format!("{:?}", span.context().span().span_context().span_id());
-    let pg_trace = greeting_db_api::greeting_pg_trace::PgTraceContext { trace_id: trace_id, parent_span_id: span_id };
+fn generate_pg_trace_context() -> PgTraceContext {
+    let span = Span::current().context().span().span_context().clone();
+    let trace_id = format!("{}", span.trace_id());
+    let span_id = format!("{:?}", span.span_id());
+    let pg_trace = PgTraceContext {
+        trace_id,
+        parent_span_id: span_id,
+    };
     pg_trace
 }
 
-#[instrument(name = "generate_logg")]
-pub async fn generate_logg(pool: Box<Pool<Postgres>>)->Result<(), ApiError> {
+pub async fn generate_log(pool: Box<Pool<Postgres>>) -> Result<(), ApiError> {
     loop {
-        let pg_trace = generatePgTraceContext();
-
-        tokio::time::sleep(Duration::from_secs(5)).await;
-        info!("Generating logs");
-        if let Err(e) = greeting_db_api::generate_logg(&pool, pg_trace).await {
-            error!("Failed to generate logg: {:?}", e);
-        }
+        inner_generate_log(pool.clone()).await?;
+        sleep(Duration::from_secs(5)).await;
     }
+}
+
+#[instrument(name = "generate_log")]
+async fn inner_generate_log(pool: Box<Pool<Postgres>>) -> Result<(), ApiError> {
+    let pg_trace = generate_pg_trace_context();
+
+    info!("Generating logs");
+    if let Err(e) = greeting_db_api::generate_logg(&pool, pg_trace).await {
+        error!("Failed to generate logg: {:?}", e);
+    }
+    Ok(())
 }
 
 #[derive(Debug, Display)]

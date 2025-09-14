@@ -34,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to migrate db");
 
-    let log_generator_handle = greeting::generate_logg(pool.clone());
+    let log_generator_handle = greeting::generate_log(pool.clone());
 
     let query_repo = Box::new(
         GreetingQueryRepositoryImpl::new(pool)
