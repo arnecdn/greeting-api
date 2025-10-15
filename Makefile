@@ -38,3 +38,4 @@ clean:
 	@echo "Cleaning up..."
 	@echo "Removing image from Minikube..."
 	minikube image rm "$(IMAGE_NAME):$(TAG)" 2>/dev/null || true
+	kubectl delete -f $(KUBERNETES_FILE)
