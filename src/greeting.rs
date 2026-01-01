@@ -51,6 +51,7 @@ impl Display for LoggQuery {
 pub struct LoggEntry {
     id: i64,
     greeting_id: i64,
+    external_refernce: String,
     #[schema(value_type = String, format = DateTime)]
     created: DateTime<Utc>,
 }
@@ -90,6 +91,7 @@ pub async fn list_log_entries(
         .map(|e| LoggEntry {
             id: e.id,
             greeting_id: e.greeting_id,
+            external_refernce: e.external_reference.to_string(),
             created: e.created,
         })
         .collect::<Vec<_>>();
@@ -118,6 +120,7 @@ pub async fn last_log_entry(
         Some(v) => Ok(HttpResponse::Ok().json(LoggEntry {
             id: v.id,
             greeting_id: v.greeting_id,
+            external_refernce: v.external_reference,
             created: v.created,
         })),
         None => Ok((HttpResponse::NoContent()).body("No content"))
