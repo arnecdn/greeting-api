@@ -995,13 +995,12 @@ dependencies = [
 
 [[package]]
 name = "greeting_db_api"
-version = "0.2.6"
-source = "git+https://github.com/arnecdn/greeting_db_api#db59ad8a01d9324be14256c05eff7a00b12c4a48"
+version = "0.2.8"
+source = "git+https://github.com/arnecdn/greeting_db_api#d9ed1897bf4c64ad2b4e74a5054b92d5ad9bd904"
 dependencies = [
  "async-trait",
  "chrono",
  "derive_more 2.0.1",
- "log",
  "serde",
  "sqlx",
  "uuid",

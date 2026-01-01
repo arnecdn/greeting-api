@@ -14,7 +14,7 @@ async fn main() -> std::io::Result<()> {
     #[derive(OpenApi)]
     #[openapi(
         info(description = "Greeting Api description"),
-        paths(greeting::list_log_entries),
+        paths(greeting::list_log_entries, greeting::last_log_entry ),
         components(schemas(greeting::LoggQuery, greeting::LoggEntry))
     )]
 
@@ -48,6 +48,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(querier_data.clone())
             .service(greeting::list_log_entries)
+            .service(greeting::last_log_entry)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-docs/openapi.json", ApiDoc::openapi()),

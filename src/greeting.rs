@@ -97,6 +97,33 @@ pub async fn list_log_entries(
     Ok(HttpResponse::Ok().json(logg_list))
 }
 
+#[utoipa::path(
+    get,
+    path = "/log/last",
+    responses(
+        (status = 200, description = "Greetings", body = LoggEntry),
+        (status = 204, description = "No greetings was not found in log")
+    )
+)]
+#[get("/log/last")]
+#[instrument(name = "last_log_entry")]
+pub async fn last_log_entry(
+    data: Data<Box<GreetingQueryRepositoryImpl>>,
+) -> Result<HttpResponse, ApiError> {
+    let pg_trace = generate_pg_trace_context();
+
+    let result = data.last_log_entry(pg_trace).await?;
+
+    match result {
+        Some(v) => Ok(HttpResponse::Ok().json(LoggEntry {
+            id: v.id,
+            greeting_id: v.greeting_id,
+            created: v.created,
+        })),
+        None => Ok((HttpResponse::NoContent()).body("No content"))
+    }
+}
+
 fn generate_pg_trace_context() -> PgTraceContext {
     let span = Span::current().context().span().span_context().clone();
     let trace_id = format!("{}", span.trace_id());
