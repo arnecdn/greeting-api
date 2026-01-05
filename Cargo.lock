@@ -982,6 +982,7 @@ dependencies = [
  "opentelemetry",
  "regex",
  "serde",
+ "serde_json",
  "sqlx",
  "tokio",
  "tracing",
@@ -995,8 +996,7 @@ dependencies = [
 
 [[package]]
 name = "greeting_db_api"
-version = "0.2.8"
-source = "git+https://github.com/arnecdn/greeting_db_api#d9ed1897bf4c64ad2b4e74a5054b92d5ad9bd904"
+version = "0.2.9"
 dependencies = [
  "async-trait",
  "chrono",

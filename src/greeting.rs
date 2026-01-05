@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::greeting::ApiError::ApplicationError;
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
@@ -18,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
+use actix_web::dev::JsonBody;
 use time::sleep;
 use tokio::time;
 use tracing::{instrument, Span};
@@ -51,12 +53,63 @@ impl Display for LoggQuery {
 pub struct LoggEntry {
     id: i64,
     greeting_id: i64,
-    external_reference: String,
+    message_id: String,
     #[schema(value_type = String, format = DateTime)]
     created: DateTime<Utc>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct Greeting{
+    id: i64,
+    message: GreetingMessage,
+    #[schema(value_type = String, format = DateTime)]
+    created: DateTime<Utc>,
+
+}
+#[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GreetingMessage {
+    external_reference: String,
+    message_id: String,
+    to: String,
+    from: String,
+    heading: String,
+    message: String,
+    #[schema(value_type = String, format = DateTime)]
+    created: DateTime<Utc>,
+    #[schema(value_type = HashMap<String, DateTime<Utc>>, format = DateTime)]
+    events_created: HashMap<String, DateTime<Utc>>,
+}
 static DIRECTION: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(asc|desc)$").unwrap());
+#[utoipa::path(
+    get,
+    path = "/greeting/{greeting_id}",
+    responses(
+        (status = 200, description = "Greetings", body = Greeting),
+        (status = NOT_FOUND, description = "Greetings was not found")
+    )
+)]
+#[get("/greeting/{greeting_id}")]
+#[instrument(name = "greeting_message")]
+pub async fn greeting_message(
+    data: Data<Box<GreetingQueryRepositoryImpl>>,
+    greeting_id: web::Path<i64>,
+) -> Result<HttpResponse, ApiError> {
+    let pg_trace = generate_pg_trace_context();
+
+    info!("Access greeting with id: {}", &greeting_id);
+    let result = data.find_greeting(pg_trace, *greeting_id).await?;
+
+    match result {
+        Some(v) => Ok(HttpResponse::Ok().json(Greeting {
+            id: v.id,
+            message: serde_json::from_value::<GreetingMessage>(v.message).unwrap(),
+            created: v.created,
+        })),
+        None => Ok((HttpResponse::NoContent()).body("No content"))
+    }
+}
 #[utoipa::path(
     get,
     path = "/log",
@@ -91,7 +144,7 @@ pub async fn list_log_entries(
         .map(|e| LoggEntry {
             id: e.id,
             greeting_id: e.greeting_id,
-            external_reference: e.external_reference.to_string(),
+            message_id: e.message_id.to_string(),
             created: e.created,
         })
         .collect::<Vec<_>>();
@@ -120,7 +173,7 @@ pub async fn last_log_entry(
         Some(v) => Ok(HttpResponse::Ok().json(LoggEntry {
             id: v.id,
             greeting_id: v.greeting_id,
-            external_reference: v.external_reference,
+            message_id: v.message_id,
             created: v.created,
         })),
         None => Ok((HttpResponse::NoContent()).body("No content"))

@@ -14,8 +14,8 @@ async fn main() -> std::io::Result<()> {
     #[derive(OpenApi)]
     #[openapi(
         info(description = "Greeting Api description"),
-        paths(greeting::list_log_entries, greeting::last_log_entry ),
-        components(schemas(greeting::LoggQuery, greeting::LoggEntry))
+        paths(greeting::list_log_entries, greeting::last_log_entry, greeting::greeting_message ),
+        components(schemas(greeting::LoggQuery, greeting::LoggEntry, greeting::Greeting))
     )]
 
     struct ApiDoc;
@@ -49,6 +49,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(querier_data.clone())
             .service(greeting::list_log_entries)
             .service(greeting::last_log_entry)
+            .service(greeting::greeting_message)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}")
                     .url("/api-docs/openapi.json", ApiDoc::openapi()),
