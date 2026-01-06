@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::greeting::ApiError::ApplicationError;
+use crate::greeting::ApiError::{ApplicationError, NotFound};
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::web::Data;
@@ -19,12 +19,12 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 use std::fmt::{Display, Formatter};
 use std::time::Duration;
-use actix_web::dev::JsonBody;
 use time::sleep;
 use tokio::time;
 use tracing::{instrument, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use utoipa::ToSchema;
+use uuid::Uuid;
 use validator_derive::Validate;
 
 #[derive(Validate, Serialize, Deserialize, Clone, ToSchema, Debug)]
@@ -68,7 +68,7 @@ pub struct Greeting{
 
 }
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
 pub struct GreetingMessage {
     external_reference: String,
     message_id: String,
@@ -77,11 +77,19 @@ pub struct GreetingMessage {
     heading: String,
     message: String,
     #[schema(value_type = String, format = DateTime)]
-    created: DateTime<Utc>,
-    #[schema(value_type = HashMap<String, DateTime<Utc>>, format = DateTime)]
-    events_created: HashMap<String, DateTime<Utc>>,
+    created: String,
+    #[schema(value_type = HashMap<String, String>)]
+    events_created: HashMap<String, String>,
 }
-static DIRECTION: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(asc|desc)$").unwrap());
+//{"to": "arne",
+// "from": "arne",
+// "created": "2026-01-06T10:20:56.210182",
+// "heading": "chrismas carg",
+// "message": "Happy christmas",
+// "message_id": "019b92bb-0088-77f1-8b09-5d56dfa72bc4",
+// "events_created":
+// {"received_greeting": "2026-01-06T09:54:47.560879858"},
+// "external_reference": "019b92d2-f012-7222-a099-0b73d5788b30"}
 #[utoipa::path(
     get,
     path = "/greeting/{greeting_id}",
@@ -107,9 +115,12 @@ pub async fn greeting_message(
             message: serde_json::from_value::<GreetingMessage>(v.message).unwrap(),
             created: v.created,
         })),
-        None => Ok((HttpResponse::NoContent()).body("No content"))
+        None => Err(NotFound("Not found".to_string()))
     }
 }
+
+static DIRECTION: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(asc|desc)$").unwrap());
+
 #[utoipa::path(
     get,
     path = "/log",
@@ -118,7 +129,7 @@ pub async fn greeting_message(
     ),
     responses(
         (status = 200, description = "Greetings", body = LoggEntry),
-        (status = NOT_FOUND, description = "Greetings was not found")
+        (status = 204, description = "Greetings was not found")
     )
 )]
 #[get("/log")]
@@ -144,12 +155,16 @@ pub async fn list_log_entries(
         .map(|e| LoggEntry {
             id: e.id,
             greeting_id: e.greeting_id,
-            message_id: e.message_id.to_string(),
+            message_id: Uuid::to_string( &e.message_id),
             created: e.created,
         })
         .collect::<Vec<_>>();
 
-    Ok(HttpResponse::Ok().json(logg_list))
+    match logg_list.is_empty() {
+        true => {Ok((HttpResponse::NoContent()).json(logg_list))}
+        false => {Ok(HttpResponse::Ok().json(logg_list))}
+    }
+
 }
 
 #[utoipa::path(
@@ -173,7 +188,7 @@ pub async fn last_log_entry(
         Some(v) => Ok(HttpResponse::Ok().json(LoggEntry {
             id: v.id,
             greeting_id: v.greeting_id,
-            message_id: v.message_id,
+            message_id: Uuid::to_string( &v.message_id),
             created: v.created,
         })),
         None => Ok((HttpResponse::NoContent()).body("No content"))
@@ -212,6 +227,7 @@ async fn inner_generate_log(pool: Box<Pool<Postgres>>) -> Result<(), ApiError> {
 #[derive(Debug, Display)]
 pub enum ApiError {
     ApplicationError(DbError),
+    NotFound(String),
 }
 
 impl ResponseError for ApiError {
@@ -219,12 +235,13 @@ impl ResponseError for ApiError {
         match *self {
             // BadClientData(_) => StatusCode::BAD_REQUEST,
             ApplicationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            NotFound(_) => StatusCode::NOT_FOUND
         }
     }
 
     fn error_response(&self) -> HttpResponse {
         HttpResponse::build(self.status_code())
-            .insert_header(ContentType::json())
+            .insert_header(ContentType::plaintext())
             .body(self.to_string())
     }
 }

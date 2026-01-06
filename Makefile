@@ -1,4 +1,4 @@
-TAG ?= 0.3
+TAG ?= 0.4
 APP_NAME = greeting-api
 IMAGE_NAME = arnecdn/$(APP_NAME)
 KUBERNETES_FILE = kubernetes/$(APP_NAME).yaml

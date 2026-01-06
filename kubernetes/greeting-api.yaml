@@ -14,7 +14,7 @@ spec:
         spec:
             containers:
                 -   name: greeting-api
-                    image: docker.io/arnecdn/greeting-api:0.3
+                    image: docker.io/arnecdn/greeting-api:0.4
                     imagePullPolicy: Never
                     resources:
                         requests:

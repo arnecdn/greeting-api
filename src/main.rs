@@ -15,7 +15,7 @@ async fn main() -> std::io::Result<()> {
     #[openapi(
         info(description = "Greeting Api description"),
         paths(greeting::list_log_entries, greeting::last_log_entry, greeting::greeting_message ),
-        components(schemas(greeting::LoggQuery, greeting::LoggEntry, greeting::Greeting))
+        components(schemas(greeting::LoggQuery, greeting::LoggEntry, greeting::Greeting, greeting::GreetingMessage))
     )]
 
     struct ApiDoc;

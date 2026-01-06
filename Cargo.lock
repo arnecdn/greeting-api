@@ -990,13 +990,15 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "utoipa-swagger-ui",
+ "uuid",
  "validator",
  "validator_derive",
 ]
 
 [[package]]
 name = "greeting_db_api"
-version = "0.2.9"
+version = "0.2.11"
+source = "git+https://github.com/arnecdn/greeting_db_api#f6748778f3d55d37b6a0e180cacc058fa0d7fc0f"
 dependencies = [
  "async-trait",
  "chrono",
@@ -3529,10 +3531,11 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.18.0"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f33196643e165781c20a5ead5582283a7dacbb87855d867fbc2df3f81eddc1be"
+checksum = "e2e054861b4bd027cd373e18e8d8d8e6548085000e41290d95ce0c373a654b4a"
 dependencies = [
+ "getrandom 0.3.2",
  "js-sys",
  "wasm-bindgen",
 ]
