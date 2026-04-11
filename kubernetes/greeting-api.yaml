@@ -14,7 +14,7 @@ spec:
         spec:
             containers:
                 -   name: greeting-api
-                    image: docker.io/arnecdn/greeting-api:0.10
+                    image: docker.io/arnecdn/greeting-api:0.14
                     imagePullPolicy: Never
                     resources:
                         requests:
@@ -27,7 +27,7 @@ spec:
                         -   containerPort: 8080
                     env:
                         - name: APP__DB__DATABASE_URL
-                          value: "postgres://greeting_rust:greeting_rust@postgres-greeting-service.cnpg-system.svc.cluster.local:5432/greeting_rust"
+                          value: "postgres://greeting_rust:greeting_rust@postgres-greeting-replica-service.cnpg-system.svc.cluster.local:5432/greeting_rust"
                         - name: APP__OTEL_COLLECTOR__OLTP_ENDPOINT
                           value: "http://meta-monitoring-alloy.meta-monitoring.svc.cluster.local:4317"
                         - name: APP__KUBE__MY_POD_NAME

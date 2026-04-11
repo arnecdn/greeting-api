@@ -1,6 +1,5 @@
 use crate::settings::Settings;
 use actix_web::{web, App, HttpServer};
-use futures_util::join;
 use greeting_db_api::greeting_query::GreetingQueryRepositoryImpl;
 use log::{error, info};
 use utoipa::OpenApi;
@@ -30,12 +29,6 @@ async fn main() -> std::io::Result<()> {
             .expect("Expected db pool"),
     );
 
-    greeting_db_api::migrate(&pool.clone())
-        .await
-        .expect("Failed to migrate db");
-
-    let log_generator_handle = greeting::generate_log(pool.clone());
-
     let query_repo = Box::new(
         GreetingQueryRepositoryImpl::new(pool)
             .await
@@ -44,7 +37,7 @@ async fn main() -> std::io::Result<()> {
     let querier_data = web::Data::new(query_repo);
     info!("Starting server");
 
-    let server_handle = HttpServer::new(move || {
+    HttpServer::new(move || {
         App::new()
             .app_data(querier_data.clone())
             .service(greeting::list_log_entries)
@@ -56,17 +49,8 @@ async fn main() -> std::io::Result<()> {
             )
     })
     .bind(("127.0.0.1", 8080))?
-    .run();
+    .run().await?;
 
-    let (log_result, server_result) = join!(log_generator_handle, server_handle);
-
-    if let Err(e) = log_result {
-        error!("Log generator failed: {:?}", e);
-    }
-    if let Err(e) = server_result {
-        error!("Server failed: {:?}", e);
-    }
-    
     if let Err(e) = providers.shutdown().await{
         error!("Failed to shut down: {:?}", e);
     }

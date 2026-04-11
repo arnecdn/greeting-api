@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use crate::greeting::ApiError::{ApplicationError, NotFound};
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
@@ -11,16 +10,14 @@ use greeting_db_api::greeting_query::{
     GreetingQueryRepository, GreetingQueryRepositoryImpl, LoggQueryEntity,
 };
 use greeting_db_api::DbError;
-use log::{error, info};
+use log::info;
 use once_cell::sync::Lazy;
 use opentelemetry::trace::TraceContextExt;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
+
+use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use std::time::Duration;
-use time::sleep;
-use tokio::time;
 use tracing::{instrument, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use utoipa::ToSchema;
@@ -60,12 +57,11 @@ pub struct LoggEntry {
 
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct Greeting{
+pub struct Greeting {
     id: i64,
     message: GreetingMessage,
     #[schema(value_type = String, format = DateTime)]
     created: DateTime<Utc>,
-
 }
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
 #[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
@@ -115,7 +111,7 @@ pub async fn greeting_message(
             message: serde_json::from_value::<GreetingMessage>(v.message).unwrap(),
             created: v.created,
         })),
-        None => Err(NotFound("Not found".to_string()))
+        None => Err(NotFound("Not found".to_string())),
     }
 }
 
@@ -155,16 +151,15 @@ pub async fn list_log_entries(
         .map(|e| LoggEntry {
             id: e.id,
             greeting_id: e.greeting_id,
-            message_id: Uuid::to_string( &e.message_id),
+            message_id: Uuid::to_string(&e.message_id),
             created: e.created,
         })
         .collect::<Vec<_>>();
 
     match logg_list.is_empty() {
-        true => {Ok((HttpResponse::NoContent()).json(logg_list))}
-        false => {Ok(HttpResponse::Ok().json(logg_list))}
+        true => Ok((HttpResponse::NoContent()).json(logg_list)),
+        false => Ok(HttpResponse::Ok().json(logg_list)),
     }
-
 }
 
 #[utoipa::path(
@@ -188,10 +183,10 @@ pub async fn last_log_entry(
         Some(v) => Ok(HttpResponse::Ok().json(LoggEntry {
             id: v.id,
             greeting_id: v.greeting_id,
-            message_id: Uuid::to_string( &v.message_id),
+            message_id: Uuid::to_string(&v.message_id),
             created: v.created,
         })),
-        None => Ok((HttpResponse::NoContent()).body("No content"))
+        None => Ok((HttpResponse::NoContent()).body("No content")),
     }
 }
 
@@ -206,24 +201,6 @@ fn generate_pg_trace_context() -> PgTraceContext {
     pg_trace
 }
 
-pub async fn generate_log(pool: Box<Pool<Postgres>>) -> Result<(), ApiError> {
-    loop {
-        inner_generate_log(pool.clone()).await?;
-        sleep(Duration::from_secs(5)).await;
-    }
-}
-
-#[instrument(name = "generate_log")]
-async fn inner_generate_log(pool: Box<Pool<Postgres>>) -> Result<(), ApiError> {
-    let pg_trace = generate_pg_trace_context();
-
-    info!("Generating logs");
-    if let Err(e) = greeting_db_api::generate_logg(&pool, pg_trace).await {
-        error!("Failed to generate logg: {:?}", e);
-    }
-    Ok(())
-}
-
 #[derive(Debug, Display)]
 pub enum ApiError {
     ApplicationError(DbError),
@@ -235,7 +212,7 @@ impl ResponseError for ApiError {
         match *self {
             // BadClientData(_) => StatusCode::BAD_REQUEST,
             ApplicationError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            NotFound(_) => StatusCode::NOT_FOUND
+            NotFound(_) => StatusCode::NOT_FOUND,
         }
     }
 
