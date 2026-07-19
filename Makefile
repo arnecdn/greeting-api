@@ -7,7 +7,7 @@ TAG := $(shell [ -f $(VERSION_FILE) ] || echo "0.1" > $(VERSION_FILE); cat $(VER
 
 .PHONY: build_app all build_image deploy clean validate-tag increment-version undeploy
 
-all: build_image deploy
+all: build_image deploy clean
 
 build_app:
 	@echo "Building the application..."
@@ -54,8 +54,17 @@ undeploy:
 	}
 
 clean:
-	@echo "Cleaning up..."
+	@echo "Cleaning up old..."
 	@echo "Removing image from Minikube..."
-	minikube image rm "$(IMAGE_NAME):$(TAG)" 2>/dev/null || true
+	@MAJOR=$$(echo $(TAG) | cut -d. -f1); \
+	NEW_MINOR=$$(echo $(TAG) | cut -d. -f2); \
+	if [ "$$NEW_MINOR" -gt 0 ]; then \
+		i=0; \
+		while [ "$$i" -lt "$$NEW_MINOR" ]; do \
+			OLD_TAG="$$MAJOR.$$i"; \
+			minikube image rm "$(IMAGE_NAME):$$OLD_TAG" 2>/dev/null || true; \
+			i=$$((i + 1)); \
+		done; \
+	fi
 	@echo "Cleaning local target..."
 	cargo clean || true
