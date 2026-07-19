@@ -19,7 +19,7 @@ serde = { version = "1.0.204", features = ["derive"] }
 dotenv = "0.15.0"
 derive_more = "0.99.18"
 utoipa = { version = "4", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "7", features = ["actix-web"] }
+utoipa-swagger-ui = { version = "7", features = ["actix-web", "vendored"] }
 validator = "0.20.0"
 validator_derive = "0.20.0"
 regex = "1.11.1"
