@@ -64,7 +64,7 @@ pub struct Greeting {
     created: DateTime<Utc>,
 }
 #[derive(Debug, Serialize, Deserialize, Clone, ToSchema)]
-#[serde(rename_all(serialize = "camelCase", deserialize = "snake_case"))]
+#[serde(rename_all="camelCase")]
 pub struct GreetingMessage {
     external_reference: String,
     message_id: String,

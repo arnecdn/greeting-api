@@ -14,7 +14,7 @@ spec:
         spec:
             containers:
                 -   name: greeting-api
-                    image: docker.io/arnecdn/greeting-api:0.1
+                    image: docker.io/arnecdn/greeting-api:0.3
                     imagePullPolicy: Never
                     resources:
                         requests:
@@ -38,6 +38,19 @@ spec:
                     command:
                               - "/usr/bin/server"
 
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: greeting-api-service
+spec:
+    ports:
+        - port: 8080
+          targetPort: 8080
+    #          nodePort: 32002
+    selector:
+        app: greeting-api
+    type: LoadBalancer
 
 ---
 apiVersion: keda.sh/v1alpha1
